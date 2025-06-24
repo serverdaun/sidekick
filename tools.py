@@ -1,7 +1,6 @@
 import os
 from typing import List, Optional, Tuple
 
-from dotenv import load_dotenv
 from langchain.agents import Tool
 from langchain_community.agent_toolkits import (
     FileManagementToolkit,
@@ -14,9 +13,6 @@ from langchain_community.utilities.wikipedia import WikipediaAPIWrapper
 from langchain_experimental.tools import PythonREPLTool
 from playwright.async_api import async_playwright
 from sympy import SympifyError, sympify
-
-# Load environment variables
-load_dotenv(override=True)
 
 
 # Custom math tool
