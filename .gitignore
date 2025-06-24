@@ -14,3 +14,6 @@ wheels/
 
 # Output files
 sandbox/
+
+# Memory file
+sidekick_memory.json
