@@ -1,12 +1,14 @@
+import os
 from typing import Any, List, Tuple
 
 import gradio as gr
 
+from config import MEMORY_FILE
 from sidekick import Sidekick
 
 
 async def setup() -> Sidekick:
-    sidekick = Sidekick()
+    sidekick = Sidekick(memory_file=MEMORY_FILE)
     await sidekick.setup()
     return sidekick
 
@@ -26,9 +28,19 @@ async def reset(sidekick: Sidekick) -> Tuple[str, str, None, Sidekick]:
     except Exception:
         pass  # Ignore cleanup failures during reset
 
-    new_sidekick = Sidekick()
+    new_sidekick = Sidekick(memory_file=MEMORY_FILE)
     await new_sidekick.setup()
     return "", "", None, new_sidekick
+
+
+async def clear_memory(sidekick: Sidekick) -> Tuple[str, str, None, Sidekick]:
+    """Delete the persistent memory file."""
+    try:
+        os.remove(MEMORY_FILE)
+    except FileNotFoundError:
+        pass
+
+    return await reset(sidekick)
 
 
 def free_resources(sidekick: Sidekick) -> None:
@@ -64,6 +76,7 @@ with gr.Blocks(title="Sidekick", theme=gr.themes.Default(primary_hue="emerald"))
     with gr.Row():
         reset_button = gr.Button("Reset", variant="stop")
         go_button = gr.Button("Go!", variant="primary")
+        clear_memory_button = gr.Button("Clear Memory", variant="secondary")
 
     ui.load(setup, [], [sidekick])
     message.submit(
@@ -83,6 +96,9 @@ with gr.Blocks(title="Sidekick", theme=gr.themes.Default(primary_hue="emerald"))
     )
     reset_button.click(
         reset, [sidekick], [message, success_criteria, chatbot, sidekick]
+    )
+    clear_memory_button.click(
+        clear_memory, [sidekick], [message, success_criteria, chatbot, sidekick]
     )
 
 

@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Any, List, Literal, Optional
 
-from dotenv import load_dotenv
+from langchain_community.chat_message_histories import FileChatMessageHistory
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
@@ -12,9 +12,8 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from pydantic import BaseModel, Field
 
+from config import OPENAI_CHAT_MODEL_EVALUATOR, OPENAI_CHAT_MODEL_WORKER
 from tools import get_all_tools_with_browser
-
-load_dotenv(override=True)
 
 
 class State(BaseModel):
@@ -42,7 +41,9 @@ class EvaluatorOutput(BaseModel):
 class Sidekick:
     """Sidekick class"""
 
-    def __init__(self):
+    def __init__(self, memory_file: str = "sidekick_memory.json"):
+        """Initialize the Sidekick"""
+
         self.worker_llm_with_tools = None
         self.evaluator_llm_with_output = None
         self.tools = None
@@ -52,14 +53,16 @@ class Sidekick:
         self.memory = MemorySaver()
         self.browser = None
         self.playwright = None
+        self.chat_memory = FileChatMessageHistory(file_path=memory_file)
 
     async def setup(self) -> None:
         """Setup function"""
 
         self.tools, self.browser, self.playwright = await get_all_tools_with_browser()
-        worker_llm = ChatOpenAI(model="gpt-4o-mini")
+        worker_llm = ChatOpenAI(model=OPENAI_CHAT_MODEL_WORKER)
         self.worker_llm_with_tools = worker_llm.bind_tools(self.tools)
-        evaluator_llm = ChatOpenAI(model="gpt-4o-mini")
+
+        evaluator_llm = ChatOpenAI(model=OPENAI_CHAT_MODEL_EVALUATOR)
         self.evaluator_llm_with_output = evaluator_llm.with_structured_output(
             EvaluatorOutput
         )
@@ -223,8 +226,12 @@ If you're seeing the Assistant repeating the same mistakes, then consider respon
 
         config = {"configurable": {"thread_id": self.sidekick_id}}
 
+        # Load persistent conversation history.
+        persistent_messages = self.chat_memory.messages if self.chat_memory else []
+
+        # Build the initial state for the graph including persistent history and the new user message.
         state = {
-            "messages": [HumanMessage(content=message)],
+            "messages": persistent_messages + [HumanMessage(content=message)],
             "success_criteria": success_criteria
             or "The answer should be clear and accurate",
             "feedback_on_work": None,
@@ -232,8 +239,16 @@ If you're seeing the Assistant repeating the same mistakes, then consider respon
             "user_input_needed": False,
         }
         result = await self.graph.ainvoke(state, config=config)
+
+        # Update the persistent memory with the new user and assistant messages
+        self.chat_memory.add_user_message(message)
+
+        # The assistant's reply is the second to last message (the last one is evaluator feedback)
+        assistant_reply_content = result["messages"][-2].content
+        self.chat_memory.add_ai_message(assistant_reply_content)
+
         user = {"role": "user", "content": message}
-        reply = {"role": "assistant", "content": result["messages"][-2].content}
+        reply = {"role": "assistant", "content": assistant_reply_content}
         feedback = {"role": "assistant", "content": result["messages"][-1].content}
         return history + [user, reply, feedback]
 
