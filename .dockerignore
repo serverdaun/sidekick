@@ -1,0 +1,25 @@
+# Docker-specific ignores
+.dockerignore
+Dockerfile
+.git
+.gitignore
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Environment variables
+.env
+
+# Output files
+sandbox/
+
+# Memory file
+sidekick_memory.json

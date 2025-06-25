@@ -1,3 +1,12 @@
+---
+title: Ai Sidekick
+emoji: 🌍
+colorFrom: red
+colorTo: yellow
+sdk: docker
+pinned: false
+---
+
 # AI Sidekick
 
 ## Overview

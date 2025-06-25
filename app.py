@@ -103,4 +103,4 @@ with gr.Blocks(title="Sidekick", theme=gr.themes.Default(primary_hue="emerald"))
 
 
 if __name__ == "__main__":
-    ui.launch()
+    ui.launch(server_name="0.0.0.0", server_port=7860)
