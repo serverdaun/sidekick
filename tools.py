@@ -14,6 +14,8 @@ from langchain_experimental.tools import PythonREPLTool
 from playwright.async_api import async_playwright
 from sympy import SympifyError, sympify
 
+from config import SANDBOX_DIR
+
 
 # Custom math tool
 def safe_math_calculator(expression: str) -> str:
@@ -50,7 +52,7 @@ def create_math_tool() -> List[Tool]:
     ]
 
 
-def create_file_tools(root_dir: str = "sandbox") -> List[Tool]:
+def create_file_tools(root_dir: str = SANDBOX_DIR) -> List[Tool]:
     """Create file management tools"""
     try:
         # Ensure the directory exists
@@ -104,7 +106,7 @@ async def create_playwright_tools() -> (
         return [], None, None
 
 
-def get_tools(sandbox_dir: str = "sandbox") -> List[Tool]:
+def get_tools(sandbox_dir: str = SANDBOX_DIR) -> List[Tool]:
     """
     Get all available tools.
 
@@ -148,7 +150,7 @@ def get_tools(sandbox_dir: str = "sandbox") -> List[Tool]:
 
 
 async def get_all_tools_with_browser(
-    sandbox_dir: str = "sandbox",
+    sandbox_dir: str = SANDBOX_DIR,
 ) -> Tuple[List[Tool], Optional[object], Optional[object]]:
     """
     Get all tools including browser tools.
